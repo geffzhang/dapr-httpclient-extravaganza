@@ -2,12 +2,14 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapr.Client;
 using WebApiClientCore.Attributes;
 using WebApiClientCore.Exceptions;
+using static Google.Rpc.Context.AttributeContext.Types;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace BankClient
@@ -32,13 +34,14 @@ namespace BankClient
             Task<Account> Deposit([JsonContent] Transaction transaction, CancellationToken cancellationToken = default);
 
             [HttpPost("/withdraw")]
+            [RawReturn(Enable =true, EnsureSuccessStatusCode = false)]
             Task<HttpResponseMessage> Withdraw([JsonContent] Transaction transaction, CancellationToken cancellationToken = default);
         }
 
         public override async Task RunAsync(CancellationToken cancellationToken)
         {
             var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
- 
+
 
             // Scenario 1: Check if the account already exists.
             Account? account = null;
@@ -46,7 +49,7 @@ namespace BankClient
             {
                 account = await bankClient.GetUser("17", cancellationToken);
             }
-            catch (ApiException ex)  
+            catch (ApiException ex)
             {
                 // Account does not exist.
             }
@@ -70,21 +73,23 @@ namespace BankClient
                 Amount = 1_000_000m,
                 Id = "17",
             };
-            
-            var response = await bankClient.Withdraw(transaction, cancellationToken);
+            HttpResponseMessage response = null;
+
+            response = await bankClient.Withdraw(transaction, cancellationToken);
             if (response.StatusCode != HttpStatusCode.BadRequest)
             {
                 // We don't actually expect this example to succeed - we expect a 400
                 Console.WriteLine("Something went wrong :(");
                 return;
             }
-
             var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(cancellationToken: cancellationToken);
             Console.WriteLine($"Scenario 3: got the following errors:");
             foreach (var kvp in problem!.Errors)
             {
                 Console.WriteLine($"{kvp.Key}: {string.Join(", ", kvp.Value)}");
             }
+
+
         }
     }
 }

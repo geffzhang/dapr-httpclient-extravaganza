@@ -18,8 +18,9 @@ namespace BankClient
             services.AddTransient<Example,HttpClientExample>();
             services.AddTransient<Example, RefitExample>();
             services.AddTransient<Example, WebapiClientExample>();
+            services.AddLogging();
 
-            services.AddLogging()
+            services
                 .AddScoped<InvocationHandler>()
                 .AddHttpApi<WebapiClientExample.IBank>(o => o.HttpHost = new Uri("http://bank"))
                 .AddHttpMessageHandler<InvocationHandler>();
