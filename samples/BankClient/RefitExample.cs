@@ -32,7 +32,7 @@ namespace BankClient
             var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
             var settings = new RefitSettings(new SystemTextJsonContentSerializer(options));
 
-            var client = RestService.For<IBank>(new HttpClient(new ServiceInvocationHandler(new HttpClientHandler()))
+            var client = RestService.For<IBank>(new HttpClient(new InvocationHandler())
             {
                 // Using app-id as the hostname.
                 BaseAddress = new Uri("http://bank"),
